@@ -91,7 +91,8 @@ def decrypt(cipher: str, key_name: str) -> str:
 # =========================
 st.set_page_config(page_title="Ore–Mask Cipher (Multi-Key)")
 
-st.title("🔐 Ore–Mask Cipher THE FORGE - ROBLOX")
+st.title("🔐 Ore–Mask Cipher")
+st.title("THE FORGE - ROBLOX")
 st.caption("Multi-Key Masked Cipher for Secure Text Transformation")
 
 key_choice = st.selectbox("Pilih Key", list(KEYS.keys()))
@@ -111,4 +112,5 @@ else:
             st.code(decrypt(cipher, key_choice))
         except Exception as e:
             st.error(str(e))
+
 
