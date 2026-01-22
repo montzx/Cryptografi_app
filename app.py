@@ -1,7 +1,18 @@
 import streamlit as st
 
 # =========================
-# DATA TABLE (KEY)
+# KEY DEFINITIONS
+# =========================
+KEYS = {
+    "ruby": 11,
+    "emerald": 17,
+    "diamond": 23,
+    "gold": 29,
+    "silver": 31
+}
+
+# =========================
+# DATA TABLE
 # =========================
 DATA = {
     "A": {"index": 1, "rarity": 2, "chance": 50, "multiplier": 115},
@@ -33,43 +44,44 @@ DATA = {
 }
 
 # =========================
-# CORE FUNCTIONS
+# CRYPTO FUNCTIONS
 # =========================
-def encrypt(text: str) -> str:
+def encrypt(text: str, key_name: str) -> str:
+    K = KEYS[key_name]
     text = text.upper().replace(" ", "")
     result = []
 
     for ch in text:
         if ch not in DATA:
-            raise ValueError(f"Huruf tidak valid: {ch}")
+            raise ValueError("Plaintext hanya boleh A–Z")
 
         d = DATA[ch]
-        masked_code = (d["index"] * 7) + 13
-        encrypt_value = (d["chance"] + d["multiplier"]) * d["rarity"]
-        result.append(f"{masked_code}:{encrypt_value}")
+        masked = (d["index"] * 7) + 13 + K
+        value = ((d["chance"] + d["multiplier"]) * d["rarity"]) + K
+        result.append(f"{masked}:{value}")
 
     return ".".join(result)
 
 
-def decrypt(cipher: str) -> str:
+def decrypt(cipher: str, key_name: str) -> str:
+    K = KEYS[key_name]
     blocks = cipher.split(".")
     plain = ""
 
     for block in blocks:
-        masked_code, encrypt_value = map(int, block.split(":"))
-        index = (masked_code - 13) // 7
+        masked, value = map(int, block.split(":"))
+        index = (masked - 13 - K) // 7
 
         found = False
         for ch, d in DATA.items():
-            if d["index"] == index:
-                expected = (d["chance"] + d["multiplier"]) * d["rarity"]
-                if expected == encrypt_value:
-                    plain += ch
-                    found = True
-                    break
+            expected = ((d["chance"] + d["multiplier"]) * d["rarity"]) + K
+            if d["index"] == index and expected == value:
+                plain += ch
+                found = True
+                break
 
         if not found:
-            raise ValueError(f"Cipher tidak valid: {block}")
+            raise ValueError("Key salah atau cipher rusak")
 
     return plain
 
@@ -77,31 +89,25 @@ def decrypt(cipher: str) -> str:
 # =========================
 # STREAMLIT UI
 # =========================
-st.set_page_config(page_title="Ore–Mask Cipher", layout="centered")
+st.set_page_config(page_title="Ore–Mask Cipher (Multi-Key)")
 
 st.title("🔐 Ore–Mask Cipher")
-st.caption("Custom Cryptography Algorithm (Educational Purpose)")
+st.caption("Multi-Key Symmetric Cryptography (Educational)")
 
-mode = st.radio("Pilih Mode", ["Enkripsi", "Dekripsi"])
+key_choice = st.selectbox("Pilih Key", list(KEYS.keys()))
+mode = st.radio("Mode", ["Enkripsi", "Dekripsi"])
 
 if mode == "Enkripsi":
-    plaintext = st.text_input("Masukkan Plaintext (A–Z, tanpa spasi)")
-
+    text = st.text_input("Plaintext (A–Z)")
     if st.button("Enkripsi"):
         try:
-            cipher = encrypt(plaintext)
-            st.success("Berhasil dienkripsi")
-            st.code(cipher)
+            st.code(encrypt(text, key_choice))
         except Exception as e:
             st.error(str(e))
-
 else:
-    ciphertext = st.text_area("Masukkan Ciphertext")
-
+    cipher = st.text_area("Ciphertext")
     if st.button("Dekripsi"):
         try:
-            plain = decrypt(ciphertext)
-            st.success("Berhasil didekripsi")
-            st.code(plain)
+            st.code(decrypt(cipher, key_choice))
         except Exception as e:
             st.error(str(e))
